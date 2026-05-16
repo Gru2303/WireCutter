@@ -1,17 +1,7 @@
 #include "interupts.h"
 
-void EXTI3_IRQHandler() {
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
-}
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-    if (GPIO_Pin == GPIO_PIN_3) {
-
-    }
-}
-
-void DMA2_Stream5_IRQHandler() {
-    HAL_DMA_IRQHandler(&hdma_tim1_up);
+void TIM1_UP_TIM10_IRQHandler() {
+    HAL_TIM_IRQHandler(&htim1);
 }
 
 void NMI_Handler() {

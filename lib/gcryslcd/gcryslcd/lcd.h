@@ -57,12 +57,12 @@ typedef enum {
 } gcryslcd_mode_t;
 
 typedef struct {
-    const gcryslcd_hw_t hw;
+    gcryslcd_hw_t hw;
 
-    const gcryslcd_mode_t mode;
-    const uint8_t cols;
-    const uint8_t lines;
-    const uint8_t dotSize;
+    gcryslcd_mode_t mode;
+    uint8_t cols;
+    uint8_t lines;
+    uint8_t dotSize;
 } gcryslcd_init_t;
 
 typedef struct {
@@ -72,7 +72,7 @@ typedef struct {
 } gcryslcd_internal_t;
 
 typedef struct {
-    const gcryslcd_init_t init;
+    gcryslcd_init_t init;
 
     gcryslcd_internal_t _internal;
 } gcryslcd_t;

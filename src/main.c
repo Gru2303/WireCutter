@@ -7,7 +7,6 @@ int main() {
 
     system_clock_config();
     gpio_init();
-    dma_init();
     timer_init();
     dwt_init();
     i2c_init();
@@ -23,54 +22,18 @@ int main() {
     }
 }
 
-static void dir(gstepper_dir_t dir) {
-    // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
-    //
-    // for (int j = 0; j < 50; j++) {
-    //     __NOP();
-    // }
-}
-
-static void gcryslcd_delaytest(uint32_t micros) {
-    uint32_t start = dwt_get_micros();
-    uint32_t wait = micros;
-
-    if (wait < 0xFFFFFFFFU) {
-        wait += 1;
-    }
-
-    while ((dwt_get_micros() - start) < wait) {
-    }
-}
-
-static void step() {
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
-
-    gcryslcd_delaytest(1);
-
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-
-    gcryslcd_delaytest(300);
-}
-
-gstepper_t stepper = {
-    .init = {
-        .dir = dir,
-        .step = step,
-    }
-};
-
 void setup() {
-    gcryslcd_menu_init(&menu, &main_page);
-    gstepper_init(&stepper);
+    gcryslcd_menu_init(&menu, &menu_main_page);
+    gstepper_init(&wire_motor);
+    gstepper_init(&cut_motor);
 
     HAL_Delay(100);
 }
 
 void loop() {
     controls_tick();
-
-    gstepper_step(&stepper);
+    handler_home_tick();
+    handler_cutting_tick();
 }
 
 void controls_tick() {
@@ -79,7 +42,7 @@ void controls_tick() {
 
     if (gbutton_click_with_clicks(&control_button, 1)) {
         gcryslcd_menu_handle_input(&menu, GCRYSLCD_MENU_INPUT_ENTER);
-    } else if (gbutton_click_with_clicks(&control_button, 2)) {
+    } else if (gbutton_hold(&control_button)) {
         gcryslcd_menu_handle_input(&menu, GCRYSLCD_MENU_INPUT_BACK);
     }
 
@@ -92,6 +55,13 @@ void controls_tick() {
     }
 
     gcryslcd_menu_render(&menu);
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    if (htim->Instance == TIM1) {
+        gstepper_tick(&wire_motor);
+        gstepper_tick(&cut_motor);
+    }
 }
 
 

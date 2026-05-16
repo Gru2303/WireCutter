@@ -8,9 +8,12 @@ static void timer1_init() {
     TIM_MasterConfigTypeDef sMasterConfig = {0};
 
     htim1.Instance = TIM1;
-    htim1.Init.Prescaler = 0;
+
+
+    htim1.Init.Prescaler = 100 - 1;
+    htim1.Init.Period = 100 - 1;
+
     htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim1.Init.Period = 65535;
     htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     htim1.Init.RepetitionCounter = 0;
     htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -31,6 +34,11 @@ static void timer1_init() {
     if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK) {
         Error_Handler();
     }
+
+    HAL_NVIC_SetPriority(TIM1_UP_TIM10_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
+
+    HAL_TIM_Base_Start_IT(&htim1);
 }
 
 static void timer2_init() {
@@ -87,23 +95,6 @@ void timer_deinit() {
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base) {
     if (htim_base->Instance == TIM1) {
         __HAL_RCC_TIM1_CLK_ENABLE();
-
-        hdma_tim1_up.Instance = DMA2_Stream5;
-        hdma_tim1_up.Init.Channel = DMA_CHANNEL_6;
-        hdma_tim1_up.Init.Direction = DMA_MEMORY_TO_PERIPH;
-        hdma_tim1_up.Init.PeriphInc = DMA_PINC_DISABLE;
-        hdma_tim1_up.Init.MemInc = DMA_MINC_ENABLE;
-        hdma_tim1_up.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-        hdma_tim1_up.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-        hdma_tim1_up.Init.Mode = DMA_NORMAL;
-        hdma_tim1_up.Init.Priority = DMA_PRIORITY_VERY_HIGH;
-        hdma_tim1_up.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-
-        if (HAL_DMA_Init(&hdma_tim1_up) != HAL_OK) {
-            Error_Handler();
-        }
-
-        __HAL_LINKDMA(htim_base,hdma[TIM_DMA_ID_UPDATE],hdma_tim1_up);
     }
 }
 

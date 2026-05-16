@@ -10,23 +10,13 @@
     #define GCRYSLCD_MENU_RUN_LINE_DELAY 500
 #endif
 
-#define GCRYSLCD_MENU_MAX(a, b) \
-({ __typeof__ (a) _a = (a); \
-__typeof__ (b) _b = (b); \
-_a > _b ? _a : _b; })
-
-#define GCRYSLCD_MENU_MIN(a, b) \
-({ __typeof__ (a) _a = (a); \
-__typeof__ (b) _b = (b); \
-_a < _b ? _a : _b; })
-
 typedef struct gcryslcd_menu_page_s gcryslcd_menu_page_t;
 typedef struct gcryslcd_menu_s gcryslcd_menu_t;
 
 typedef struct {
-    const char *text;
-    bool noAvailable;
-    bool hide;
+    char *text;
+    bool *noAvailable;
+    bool *hide;
 } gcryslcd_menu_widget_base_t;
 
 typedef gcryslcd_menu_widget_base_t gcryslcd_menu_widget_text_t;
@@ -34,13 +24,14 @@ typedef gcryslcd_menu_widget_base_t gcryslcd_menu_widget_text_t;
 typedef struct gcryslcd_menu_widget_button_s gcryslcd_menu_widget_button_t;
 struct gcryslcd_menu_widget_button_s {
     gcryslcd_menu_widget_base_t base;
+    bool *nextCursor;
     void (*action)(gcryslcd_menu_t *menu, gcryslcd_menu_widget_button_t *widget);
 };
 
 typedef struct gcryslcd_menu_widget_int_s gcryslcd_menu_widget_int_t;
 struct gcryslcd_menu_widget_int_s {
     gcryslcd_menu_widget_base_t base;
-    int32_t value;
+    int32_t *value;
     int32_t min;
     int32_t max;
     int32_t step;
@@ -50,7 +41,7 @@ struct gcryslcd_menu_widget_int_s {
 typedef struct gcryslcd_menu_widget_float_s gcryslcd_menu_widget_float_t;
 struct gcryslcd_menu_widget_float_s {
     gcryslcd_menu_widget_base_t base;
-    float value;
+    float *value;
     float min;
     float max;
     float step;
@@ -60,7 +51,7 @@ struct gcryslcd_menu_widget_float_s {
 typedef struct gcryslcd_menu_widget_bool_s gcryslcd_menu_widget_bool_t;
 struct gcryslcd_menu_widget_bool_s {
     gcryslcd_menu_widget_base_t base;
-    bool value;
+    bool *value;
     void (*onChange)(gcryslcd_menu_t *menu, gcryslcd_menu_widget_bool_t *widget, bool oldValue, bool newValue);
 };
 
@@ -69,7 +60,7 @@ struct gcryslcd_menu_widget_select_s {
     gcryslcd_menu_widget_base_t base;
     const char **values;
     uint32_t values_count;
-    uint32_t selected_index;
+    uint32_t *selected_index;
     void (*onChange)(gcryslcd_menu_t *menu, gcryslcd_menu_widget_select_t *widget, bool oldValue, bool newValue);
 };
 
@@ -77,6 +68,7 @@ typedef struct gcryslcd_menu_widget_submenu_s gcryslcd_menu_widget_submenu_t;
 struct gcryslcd_menu_widget_submenu_s {
     gcryslcd_menu_widget_base_t base;
     gcryslcd_menu_page_t *page;
+    bool *nextCursor;
     void (*onChange)(gcryslcd_menu_t *menu, gcryslcd_menu_widget_submenu_t *widget, gcryslcd_menu_page_t *oldValue, gcryslcd_menu_page_t *newValue);
 };
 
@@ -105,7 +97,7 @@ typedef struct {
 } gcryslcd_menu_widget_t;
 
 struct gcryslcd_menu_page_s {
-    gcryslcd_menu_widget_t *widgets;
+    gcryslcd_menu_widget_t **widgets;
     uint8_t widgets_count;
     gcryslcd_menu_page_t *parent;
 };
@@ -146,8 +138,8 @@ struct gcryslcd_menu_s {
 #define GCRYSLCD_MENU_INIT_PAGE(page_name, parent_page, ...) \
 gcryslcd_menu_page_t page_name = { \
     .parent = parent_page, \
-    .widgets = (gcryslcd_menu_widget_t[]) { __VA_ARGS__ }, \
-    .widgets_count = sizeof((gcryslcd_menu_widget_t[]) { __VA_ARGS__ }) / sizeof(gcryslcd_menu_widget_t) \
+    .widgets = (gcryslcd_menu_widget_t*[]) { __VA_ARGS__ }, \
+    .widgets_count = sizeof((gcryslcd_menu_widget_t*[]) { __VA_ARGS__ }) / sizeof(gcryslcd_menu_widget_t*) \
 }
 
 void gcryslcd_menu_init(gcryslcd_menu_t *lcd, gcryslcd_menu_page_t *page);

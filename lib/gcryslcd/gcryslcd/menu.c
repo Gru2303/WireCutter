@@ -1,11 +1,15 @@
 #include "menu.h"
 
 static uint32_t get_visible_widget_index(gcryslcd_menu_page_t *page, uint32_t start_idx, uint32_t visible_offset);
+
 static bool get_prev_selectable(gcryslcd_menu_page_t *page, uint32_t current, uint32_t *out_idx);
+
 static bool get_next_selectable(gcryslcd_menu_page_t *page, uint32_t current, uint32_t *out_idx);
 
 static void gcryslcd_menu_handle_navigate(gcryslcd_menu_t *menu, gcryslcd_menu_input_t input);
+
 static void gcryslcd_menu_handle_edit(gcryslcd_menu_t *menu, gcryslcd_menu_input_t input);
+
 static void gcryslcd_get_widget_text_value(const gcryslcd_menu_widget_t *widget, char *buff, uint32_t buff_len, uint8_t display_width);
 
 void gcryslcd_menu_init(gcryslcd_menu_t *menu, gcryslcd_menu_page_t *page) {
@@ -29,7 +33,7 @@ void gcryslcd_menu_set_page(gcryslcd_menu_t *menu, gcryslcd_menu_page_t *page) {
     menu->_internal.last_render = 0;
 
     for (uint32_t i = 0; i < page->widgets_count; i++) {
-        if (!page->widgets[i].baseWidget.hide && !page->widgets[i].baseWidget.noAvailable) {
+        if (!page->widgets[i]->baseWidget.hide && !page->widgets[i]->baseWidget.noAvailable) {
             menu->_internal.selected_index = i;
 
             break;
@@ -104,10 +108,10 @@ void gcryslcd_menu_update(gcryslcd_menu_t *menu, uint8_t line) {
         return;
     }
 
-    gcryslcd_menu_widget_t *widget = &menu->_internal.page->widgets[widget_index];
+    gcryslcd_menu_widget_t *widget = menu->_internal.page->widgets[widget_index];
 
-    const char cursorState = (menu->_internal.state == GCRYSLCD_MENU_STATE_NAVIGATE) ? '\x7E' : '=';
-    const char cursor = (widget_index == menu->_internal.selected_index) ? cursorState : ' ';
+    const char cursorState = menu->_internal.state == GCRYSLCD_MENU_STATE_NAVIGATE ? '\x7E' : '=';
+    const char cursor = widget_index == menu->_internal.selected_index ? cursorState : ' ';
 
     char buff[GCRYSLCD_PRINTF_BUFFER_LEN] = {0};
 
@@ -120,7 +124,7 @@ void gcryslcd_menu_update(gcryslcd_menu_t *menu, uint8_t line) {
         bool has_prev = false;
 
         for (int32_t i = (int32_t)menu->_internal.scroll_offset - 1; i >= 0; i--) {
-            if (!menu->_internal.page->widgets[i].baseWidget.hide) {
+            if (!menu->_internal.page->widgets[i]->baseWidget.hide) {
                 has_prev = true;
 
                 break;
@@ -144,7 +148,7 @@ static uint32_t get_visible_widget_index(gcryslcd_menu_page_t *page, uint32_t st
     uint32_t visible_count = 0;
 
     while (current < page->widgets_count) {
-        if (!page->widgets[current].baseWidget.hide) {
+        if (!page->widgets[current]->baseWidget.hide) {
             if (visible_count == visible_offset) {
                 return current;
             }
@@ -159,7 +163,7 @@ static bool get_prev_selectable(gcryslcd_menu_page_t *page, uint32_t current, ui
     if (current == 0) return false;
 
     for (int32_t i = (int32_t)current - 1; i >= 0; i--) {
-        if (!page->widgets[i].baseWidget.hide && !page->widgets[i].baseWidget.noAvailable) {
+        if (!page->widgets[i]->baseWidget.hide && !page->widgets[i]->baseWidget.noAvailable) {
             *out_idx = (uint32_t)i;
 
             return true;
@@ -171,7 +175,7 @@ static bool get_prev_selectable(gcryslcd_menu_page_t *page, uint32_t current, ui
 
 static bool get_next_selectable(gcryslcd_menu_page_t *page, uint32_t current, uint32_t *out_idx) {
     for (uint32_t i = current + 1; i < page->widgets_count; i++) {
-        if (!page->widgets[i].baseWidget.hide && !page->widgets[i].baseWidget.noAvailable) {
+        if (!page->widgets[i]->baseWidget.hide && !page->widgets[i]->baseWidget.noAvailable) {
             *out_idx = i;
 
             return true;
@@ -204,7 +208,7 @@ static void gcryslcd_menu_handle_navigate(gcryslcd_menu_t *menu, gcryslcd_menu_i
 
             uint32_t visible_count = 0;
             for (uint32_t i = *scroll; i <= *sel; i++) {
-                if (!page->widgets[i].baseWidget.hide) visible_count++;
+                if (!page->widgets[i]->baseWidget.hide) visible_count++;
             }
 
             if (visible_count > lines_to_draw) {
@@ -213,7 +217,7 @@ static void gcryslcd_menu_handle_navigate(gcryslcd_menu_t *menu, gcryslcd_menu_i
 
                 while (new_scroll > 0 && vis_seen < lines_to_draw) {
                     new_scroll--;
-                    if (!page->widgets[new_scroll].baseWidget.hide) {
+                    if (!page->widgets[new_scroll]->baseWidget.hide) {
                         vis_seen++;
                     }
                 }
@@ -222,7 +226,7 @@ static void gcryslcd_menu_handle_navigate(gcryslcd_menu_t *menu, gcryslcd_menu_i
             }
         }
     } else if (input == GCRYSLCD_MENU_INPUT_ENTER) {
-        gcryslcd_menu_widget_t *widget = &menu->_internal.page->widgets[*sel];
+        gcryslcd_menu_widget_t *widget = menu->_internal.page->widgets[*sel];
 
         if (widget->baseWidget.hide || widget->baseWidget.noAvailable) {
             return;
@@ -239,10 +243,11 @@ static void gcryslcd_menu_handle_navigate(gcryslcd_menu_t *menu, gcryslcd_menu_i
             case GCRYSLCD_MENU_WIDGET_INT:
             case GCRYSLCD_MENU_WIDGET_FLOAT:
             case GCRYSLCD_MENU_WIDGET_BOOL:
-            case GCRYSLCD_MENU_WIDGET_SELECT:
+            case GCRYSLCD_MENU_WIDGET_SELECT: {
                 menu->_internal.state = GCRYSLCD_MENU_STATE_EDIT;
 
                 break;
+            }
             case GCRYSLCD_MENU_WIDGET_SUBMENU: {
                 gcryslcd_menu_page_t *currentPage = menu->_internal.page;
                 gcryslcd_menu_page_t *childPage = widget->submenuWidget.page;
@@ -276,9 +281,9 @@ static void gcryslcd_menu_handle_edit(gcryslcd_menu_t *menu, gcryslcd_menu_input
         return;
     }
 
-    gcryslcd_menu_widget_t *widget = &menu->_internal.page->widgets[menu->_internal.selected_index];
+    gcryslcd_menu_widget_t *widget = menu->_internal.page->widgets[menu->_internal.selected_index];
 
-    int dir = (input == GCRYSLCD_MENU_INPUT_UP) ? 1 : (input == GCRYSLCD_MENU_INPUT_DOWN ? -1 : 0);
+    int dir = input == GCRYSLCD_MENU_INPUT_UP ? 1 : (input == GCRYSLCD_MENU_INPUT_DOWN ? -1 : 0);
 
     if (dir == 0) {
         return;
@@ -286,7 +291,7 @@ static void gcryslcd_menu_handle_edit(gcryslcd_menu_t *menu, gcryslcd_menu_input
 
     switch (widget->type) {
         case GCRYSLCD_MENU_WIDGET_INT: {
-            int32_t current = widget->intWidget.value;
+            int32_t current = *widget->intWidget.value;
             int32_t step = widget->intWidget.step != 0 ? widget->intWidget.step : 1;
             int32_t next = current + (dir * step);
 
@@ -298,7 +303,7 @@ static void gcryslcd_menu_handle_edit(gcryslcd_menu_t *menu, gcryslcd_menu_input
                 next = widget->intWidget.min;
             }
 
-            widget->intWidget.value = next;
+            *widget->intWidget.value = next;
 
             if (next != current && widget->intWidget.onChange) {
                 widget->intWidget.onChange(menu, &widget->intWidget, current, next);
@@ -307,7 +312,7 @@ static void gcryslcd_menu_handle_edit(gcryslcd_menu_t *menu, gcryslcd_menu_input
             break;
         }
         case GCRYSLCD_MENU_WIDGET_FLOAT: {
-            float current = widget->floatWidget.value;
+            float current = *widget->floatWidget.value;
             float step = widget->floatWidget.step != 0.0f ? widget->floatWidget.step : 1.0f;
             float next = current + ((float) dir * step);
 
@@ -319,7 +324,7 @@ static void gcryslcd_menu_handle_edit(gcryslcd_menu_t *menu, gcryslcd_menu_input
                 next = widget->floatWidget.min;
             }
 
-            widget->floatWidget.value = next;
+            *widget->floatWidget.value = next;
 
             if (next != current && widget->floatWidget.onChange) {
                 widget->floatWidget.onChange(menu, &widget->floatWidget, current, next);
@@ -328,10 +333,10 @@ static void gcryslcd_menu_handle_edit(gcryslcd_menu_t *menu, gcryslcd_menu_input
             break;
         }
         case GCRYSLCD_MENU_WIDGET_BOOL: {
-            bool current = widget->boolWidget.value;
+            bool current = *widget->boolWidget.value;
             bool next = !current;
 
-            widget->boolWidget.value = next;
+            *widget->boolWidget.value = next;
 
             if (widget->boolWidget.onChange) {
                 widget->boolWidget.onChange(menu, &widget->boolWidget, current, next);
@@ -340,17 +345,17 @@ static void gcryslcd_menu_handle_edit(gcryslcd_menu_t *menu, gcryslcd_menu_input
             break;
         }
         case GCRYSLCD_MENU_WIDGET_SELECT: {
-            uint32_t current = widget->selectWidget.selected_index;
+            uint32_t current = *widget->selectWidget.selected_index;
             uint32_t count = widget->selectWidget.values_count;
             uint32_t next = current;
 
             if (dir > 0) {
-                next = (current + 1 < count) ? current + 1 : 0;
+                next = current + 1 < count ? current + 1 : 0;
             } else {
-                next = (current > 0) ? current - 1 : count - 1;
+                next = current > 0 ? current - 1 : count - 1;
             }
 
-            widget->selectWidget.selected_index = next;
+            *widget->selectWidget.selected_index = next;
 
             if (next != current && widget->selectWidget.onChange) {
                 widget->selectWidget.onChange(menu, (gcryslcd_menu_widget_select_t*)&widget->selectWidget, current, next);
@@ -373,14 +378,22 @@ static void gcryslcd_get_widget_text_value(const gcryslcd_menu_widget_t *widget,
     char val_str[GCRYSLCD_PRINTF_BUFFER_LEN] = {0};
 
     switch (widget->type) {
-        case GCRYSLCD_MENU_WIDGET_BUTTON:
-            break;
-        case GCRYSLCD_MENU_WIDGET_INT:
-            snprintf(val_str, sizeof(val_str), "[%ld]", widget->intWidget.value);
+        case GCRYSLCD_MENU_WIDGET_BUTTON: {
+            bool nextCursor = widget->buttonWidget.nextCursor ? *widget->buttonWidget.nextCursor : false;
+
+            if (nextCursor) {
+                snprintf(val_str, sizeof(val_str), ">");
+            }
 
             break;
+        }
+        case GCRYSLCD_MENU_WIDGET_INT: {
+            snprintf(val_str, sizeof(val_str), "[%ld]", *widget->intWidget.value);
+
+            break;
+        }
         case GCRYSLCD_MENU_WIDGET_FLOAT: {
-            const float val = widget->floatWidget.value;
+            const float val = *widget->floatWidget.value;
             int32_t int_part = (int32_t) val;
             int32_t frac_part = (int32_t) ((val - (float) int_part) * 100);
 
@@ -396,21 +409,27 @@ static void gcryslcd_get_widget_text_value(const gcryslcd_menu_widget_t *widget,
 
             break;
         }
-        case GCRYSLCD_MENU_WIDGET_BOOL:
-            snprintf(val_str, sizeof(val_str), "[%s]", widget->boolWidget.value ? "X" : " ");
-
-            break;
-        case GCRYSLCD_MENU_WIDGET_SELECT: {
-            gcryslcd_menu_widget_select_t select = widget->selectWidget;
-
-            snprintf(val_str, sizeof(val_str), "<%s>", select.values[GCRYSLCD_MENU_MIN(select.selected_index, select.values_count - 1)]);
+        case GCRYSLCD_MENU_WIDGET_BOOL: {
+            snprintf(val_str, sizeof(val_str), "[%s]", *widget->boolWidget.value ? "X" : " ");
 
             break;
         }
-        case GCRYSLCD_MENU_WIDGET_SUBMENU:
-            snprintf(val_str, sizeof(val_str), ">");
+        case GCRYSLCD_MENU_WIDGET_SELECT: {
+            gcryslcd_menu_widget_select_t select = widget->selectWidget;
+
+            snprintf(val_str, sizeof(val_str), "<%s>", select.values[*select.selected_index % select.values_count]);
 
             break;
+        }
+        case GCRYSLCD_MENU_WIDGET_SUBMENU: {
+            bool nextCursor = widget->submenuWidget.nextCursor ? *widget->submenuWidget.nextCursor : true;
+
+            if (nextCursor) {
+                snprintf(val_str, sizeof(val_str), ">");
+            }
+
+            break;
+        }
         default:
             break;
     }
@@ -420,15 +439,15 @@ static void gcryslcd_get_widget_text_value(const gcryslcd_menu_widget_t *widget,
     const char *base_text = widget->baseWidget.text ? widget->baseWidget.text : "";
     uint32_t text_len = strlen(base_text);
 
-    uint32_t val_space = (val_len > display_width) ? display_width : val_len;
+    uint32_t val_space = val_len > display_width ? display_width : val_len;
 
     uint32_t available_for_text = display_width - val_space;
     uint32_t text_space = text_len;
 
-    uint8_t min_padding = (val_space > 0 && available_for_text > 0) ? 1 : 0;
+    uint8_t min_padding = val_space > 0 && available_for_text > 0 ? 1 : 0;
 
     if (text_space > available_for_text - min_padding) {
-        text_space = (available_for_text > min_padding) ? available_for_text - min_padding : 0;
+        text_space = available_for_text > min_padding ? available_for_text - min_padding : 0;
     }
 
     uint32_t padding = display_width - text_space - val_space;

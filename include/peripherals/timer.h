@@ -2,7 +2,6 @@
 
 #include <stm32f4xx_hal.h>
 
-#include <peripherals/dma.h>
 #include "error.h"
 
 extern TIM_HandleTypeDef htim1;

@@ -9,3 +9,5 @@ void dwt_deinit();
 uint32_t dwt_get_tick();
 
 uint32_t dwt_get_micros();
+
+void dwt_delay(uint32_t micros);

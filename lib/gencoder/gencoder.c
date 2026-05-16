@@ -21,22 +21,22 @@ bool gencoder_turn(gencoder_t *encoder) {
     return encoder->_internal.steps != 0;
 }
 
-int8_t gencoder_dir(gencoder_t *encoder) {
+gencoder_dir_t gencoder_dir(gencoder_t *encoder) {
     if (!encoder) {
-        return 0;
+        return GENCODER_DIR_NONE;
     }
 
     int32_t steps = encoder->_internal.steps;
 
     if (steps > 0) {
-        return 1;
+        return GENCODER_DIR_RIGHT;
     }
 
     if (steps < 0) {
-        return -1;
+        return GENCODER_DIR_LEFT;
     }
 
-    return 0;
+    return GENCODER_DIR_NONE;
 }
 
 int32_t gencoder_steps(gencoder_t *encoder) {

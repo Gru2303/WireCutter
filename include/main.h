@@ -10,7 +10,6 @@
 
 #include "peripherals/clock.h"
 #include "peripherals/gpio.h"
-#include "peripherals/dma.h"
 #include "peripherals/timer.h"
 #include "peripherals/dwt.h"
 #include "peripherals/i2c.h"
@@ -18,9 +17,11 @@
 #include "controls/buttons.h"
 #include "controls/encoder.h"
 #include "display/display.h"
-#include "display/menu.h"
+#include "menu/menu.h"
+#include "motors/motors.h"
 
-#include "gstepper/gstepper.h"
+#include "handler/home.h"
+#include "handler/cut.h"
 
 extern  void setup();
 extern void loop();

@@ -27,21 +27,30 @@ void endpoint_gpio_init() {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
     GPIO_InitStruct.Pin = GPIO_PIN_3;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
 
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 }
 
-void motors_gpio_init() {
+void motor_wire_gpio_init() {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6 | GPIO_PIN_7, GPIO_PIN_RESET);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7;
+    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+}
+void motor_cut_gpio_init() {
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4 | GPIO_PIN_5, GPIO_PIN_SET);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
@@ -58,7 +67,8 @@ void gpio_init() {
     led_gpio_init();
     control_button_gpio_init();
     endpoint_gpio_init();
-    motors_gpio_init();
+    motor_wire_gpio_init();
+    motor_cut_gpio_init();
 }
 
 void gpio_deinit() {
